@@ -29,6 +29,7 @@ import * as rd from 'readline';
 import * as yauzl from 'yauzl';
 import { Readable, Writable } from 'stream';
 import * as nls from 'vscode-nls';
+import { UefiContext } from './uefi/main';
 
 nls.config({ messageFormat: nls.MessageFormat.bundle, bundleFormat: nls.BundleFormat.standalone })();
 const localize: nls.LocalizeFunc = nls.loadMessageBundle();
@@ -489,6 +490,12 @@ function realActivation(): void {
 
     clients.ActiveClient.notifyWhenReady(() => {
         intervalTimer = global.setInterval(onInterval, 2500);
+    });
+
+    const uefiContext: UefiContext = new UefiContext();
+    const uefiDisposables: vscode.Disposable[] = uefiContext.registerDefinitions();
+    uefiDisposables.forEach((value, indes, array) => {
+        disposables.push(value);
     });
 }
 
