@@ -1688,6 +1688,75 @@
           ]
         }
       }
+    ],
+    "languages": [
+        {
+            "id": "inf",
+            "aliases": [
+                "UEFI Information File",
+                "INF",
+                "inf"
+            ],
+            "extensions": [
+                ".inf"
+            ],
+            "configuration": "./src/LanguageServer/uefi/lang-configs/inf-language-configuration.json"
+        },
+        {
+            "id": "dec",
+            "aliases": [
+                "UEFI Declaration File",
+                "DEC",
+                "dec"
+            ],
+            "extensions": [
+                ".dec"
+            ],
+            "configuration": "./src/LanguageServer/uefi/lang-configs/dec-language-configuration.json"
+        },
+        {
+            "id": "dsc",
+            "aliases": [
+                "UEFI Platform Description File",
+                "DSC",
+                "dsc"
+            ],
+            "extensions": [
+                ".dsc"
+            ],
+            "configuration": "./src/LanguageServer/uefi/lang-configs/dsc-language-configuration.json"
+        },
+        {
+            "id": "fdf",
+            "aliases": [
+                "UEFI Flash Description File",
+                "FDF",
+                "fdf"
+            ],
+            "configuration": "./src/LanguageServer/uefi/lang-configs/fdf-language-configuration.json"
+        }
+    ],
+    "grammars": [
+        {
+            "language": "inf",
+            "scopeName": "source.inf",
+            "path": "./src/LanguageServer/uefi/syntaxes/inf.tmLanguage.json"
+        },
+        {
+            "language": "dec",
+            "scopeName": "source.dec",
+            "path": "./src/LanguageServer/uefi/syntaxes/dec.tmLanguage.json"
+        },
+        {
+            "language": "dsc",
+            "scopeName": "source.dsc",
+            "path": "./src/LanguageServer/uefi/syntaxes/dsc.tmLanguage.json"
+        },
+        {
+            "language": "fdf",
+            "scopeName": "source.fdf",
+            "path": "./src/LanguageServer/uefi/syntaxes/fdf.tmLanguage.json"
+        }
     ]
   },
   "scripts": {
