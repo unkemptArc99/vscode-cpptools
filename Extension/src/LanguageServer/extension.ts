@@ -151,6 +151,12 @@ function isMissingIncludeDiagnostic(diagnostic: vscode.Diagnostic): boolean {
  * activate: set up the extension for language services
  */
 export function activate(activationEventOccurred: boolean): void {
+    const uefiContext: UefiContext = new UefiContext();
+    const uefiDisposables: vscode.Disposable[] = uefiContext.registerDefinitions();
+    uefiDisposables.forEach((value, index, array) => {
+        disposables.push(value);
+    });
+
     if (realActivationOccurred) {
         return; // Occurs if multiple delayed commands occur before the real commands are registered.
     }
@@ -490,12 +496,6 @@ function realActivation(): void {
 
     clients.ActiveClient.notifyWhenReady(() => {
         intervalTimer = global.setInterval(onInterval, 2500);
-    });
-
-    const uefiContext: UefiContext = new UefiContext();
-    const uefiDisposables: vscode.Disposable[] = uefiContext.registerDefinitions();
-    uefiDisposables.forEach((value, indes, array) => {
-        disposables.push(value);
     });
 }
 

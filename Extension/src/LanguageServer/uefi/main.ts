@@ -18,10 +18,12 @@ class PcdDefinitionProvider implements vscode.DefinitionProvider {
         const wordRange: vscode.Range|undefined = document.getWordRangeAtPosition(position);
         if (wordRange) {
             const searchStr: string = document.getText(wordRange);
+            console.log("DecProvider " + searchStr);
             const regexMatchArr: RegExpMatchArray|null = searchStr.match(/Pcd\w+/g);
             if (regexMatchArr && regexMatchArr.length > 0) {
                 console.log(regexMatchArr[0]);
                 const strLoc: vscode.Location|undefined = pcdStore.get(regexMatchArr[0]);
+                console.log(strLoc);
                 if (strLoc) {
                     return strLoc;
                 }
@@ -38,17 +40,17 @@ export class UefiContext {
 
     constructor() {
         this.parseDecContent();
-
+        console.log("The constructor is being called!");
         this.decFileWatcher = vscode.workspace.createFileSystemWatcher ("**/*.dec");
 	    this.decFileWatcher.onDidChange(event => this.refreshPcdStore(event, 1));
 	    this.decFileWatcher.onDidCreate(event => this.refreshPcdStore(event, 2));
         this.decFileWatcher.onDidDelete(event => this.refreshPcdStore(event, 3));
     }
 
-    private parseFileForExp(fileName: vscode.Uri, pattern: RegExp): Map<string, vscode.Location> {
+    private async parseFileForExp(fileName: vscode.Uri, pattern: RegExp): Promise<Map<string, vscode.Location>> {
         // Open the file for processing
         const result: Map<string, vscode.Location> = new Map();
-        vscode.workspace.openTextDocument(fileName).then((fileContent) => {
+        return vscode.workspace.openTextDocument(fileName).then((fileContent) => {
             const textContent: string = fileContent.getText();
             // Pattern which searches Pcd declaration
             let matchArr: RegExpExecArray|null;
@@ -59,16 +61,19 @@ export class UefiContext {
                 // Storing the Pcd in the map for better complexity on finding definitions.
                 result.set(matchArr[1], new vscode.Location(fileName, new vscode.Range(startPos, endPos)));
             }
+            return result;
         });
-        return result;
     }
 
     private parseDecContent (): void {
         vscode.workspace.findFiles("**/*.dec").then(decFiles => {
             decFiles.forEach ((decFile) => {
-                const pcdResults: Map<string, vscode.Location> = this.parseFileForExp(decFile, PcdPattern);
-                pcdResults.forEach((value, key, map) => {
-                    pcdStore.set(key, value);
+                this.parseFileForExp(decFile, PcdPattern).then((pcdResults) => {
+                    pcdResults.forEach((value, key, map) => {
+                        console.log(key);
+                        console.log(value);
+                        pcdStore.set(key, value);
+                    });
                 });
             });
         });
@@ -76,20 +81,27 @@ export class UefiContext {
 
     private refreshPcdStore(fileName: vscode.Uri, eventType: number): void {
         if (eventType === 1) {
-            const pcdResult: Map<string, vscode.Location> = this.parseFileForExp(fileName, PcdPattern);
-            pcdStore.forEach((value, key, map) => {
-                if (value.uri === fileName) {
-                    const loc: vscode.Location|undefined = pcdResult.get(key);
-                    if (loc === undefined) {
-                        pcdStore.delete(key);
+            this.parseFileForExp(fileName, PcdPattern).then((pcdResults) => {
+                pcdStore.forEach((value, key, map) => {
+                    if (value.uri === fileName) {
+                        const loc: vscode.Location|undefined = pcdResults.get(key);
+                        if (loc === undefined) {
+                            pcdStore.delete(key);
+                        }
                     }
-                }
-            });
-            pcdResult.forEach((value, key, map) => {
-                pcdStore.set(key, value);
+                });
+                pcdResults.forEach((value, key, map) => {
+                    pcdStore.set(key, value);
+                });
             });
         } else if (eventType === 2) {
-            this.parseFileForExp(fileName, PcdPattern);
+            this.parseFileForExp(fileName, PcdPattern).then((pcdResults) => {
+                pcdResults.forEach((value, key, map) => {
+                    console.log(key);
+                    console.log(value);
+                    pcdStore.set(key, value);
+                });
+            });
         } else if (eventType === 3) {
             pcdStore.forEach((value, key, map) => {
                 if (value.uri === fileName) {
@@ -104,7 +116,7 @@ export class UefiContext {
 
         disposables.push(vscode.languages.registerDefinitionProvider('c', new PcdDefinitionProvider()));
         disposables.push(vscode.languages.registerDefinitionProvider('dsc', new PcdDefinitionProvider()));
-        disposables.push(vscode.languages.registerDefinitionProvider('fdf', new PcdDefinitionProvider()));
+        disposables.push(vscode.languages.registerDefinitionProvider('inf', new PcdDefinitionProvider()));
 
         return disposables;
     }
