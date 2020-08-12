@@ -41,6 +41,10 @@
   "activationEvents": [
     "onLanguage:cpp",
     "onLanguage:c",
+    "onLanguage:inf",
+    "onLanguage:dec",
+    "onLanguage:dsc",
+    "onLanguage:fdf",
     "onCommand:extension.pickNativeProcess",
     "onCommand:extension.pickRemoteNativeProcess",
     "onCommand:C_Cpp.BuildAndDebugActiveFile",

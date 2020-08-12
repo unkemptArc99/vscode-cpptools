@@ -1,5 +1,8 @@
 /**
- * Handling UEFI Context. This file provides definitions for UEFI meta files.
+ * UEFI support.
+ * Current features -
+ * 1. Code highlighting for INF, DEC, DSC and FDF files.
+ * 2. Definitions of PCDs
 **/
 'use strict';
 
@@ -18,7 +21,6 @@ class PcdDefinitionProvider implements vscode.DefinitionProvider {
         const wordRange: vscode.Range|undefined = document.getWordRangeAtPosition(position);
         if (wordRange) {
             const searchStr: string = document.getText(wordRange);
-            console.log("DecProvider " + searchStr);
             const regexMatchArr: RegExpMatchArray|null = searchStr.match(/Pcd\w+/g);
             if (regexMatchArr && regexMatchArr.length > 0) {
                 console.log(regexMatchArr[0]);
@@ -40,7 +42,6 @@ export class UefiContext {
 
     constructor() {
         this.parseDecContent();
-        console.log("The constructor is being called!");
         this.decFileWatcher = vscode.workspace.createFileSystemWatcher ("**/*.dec");
 	    this.decFileWatcher.onDidChange(event => this.refreshPcdStore(event, 1));
 	    this.decFileWatcher.onDidCreate(event => this.refreshPcdStore(event, 2));
@@ -65,13 +66,11 @@ export class UefiContext {
         });
     }
 
-    private parseDecContent (): void {
+    private async parseDecContent (): Promise<void> {
         vscode.workspace.findFiles("**/*.dec").then(decFiles => {
             decFiles.forEach ((decFile) => {
                 this.parseFileForExp(decFile, PcdPattern).then((pcdResults) => {
                     pcdResults.forEach((value, key, map) => {
-                        console.log(key);
-                        console.log(value);
                         pcdStore.set(key, value);
                     });
                 });
@@ -79,11 +78,12 @@ export class UefiContext {
         });
     }
 
-    private refreshPcdStore(fileName: vscode.Uri, eventType: number): void {
+    private async refreshPcdStore(fileName: vscode.Uri, eventType: number): Promise<void> {
+        console.log(fileName.path + " " + eventType);
         if (eventType === 1) {
             this.parseFileForExp(fileName, PcdPattern).then((pcdResults) => {
                 pcdStore.forEach((value, key, map) => {
-                    if (value.uri === fileName) {
+                    if (value.uri.path === fileName.path) {
                         const loc: vscode.Location|undefined = pcdResults.get(key);
                         if (loc === undefined) {
                             pcdStore.delete(key);
@@ -97,8 +97,6 @@ export class UefiContext {
         } else if (eventType === 2) {
             this.parseFileForExp(fileName, PcdPattern).then((pcdResults) => {
                 pcdResults.forEach((value, key, map) => {
-                    console.log(key);
-                    console.log(value);
                     pcdStore.set(key, value);
                 });
             });
