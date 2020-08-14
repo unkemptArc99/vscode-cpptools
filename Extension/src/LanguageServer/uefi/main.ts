@@ -7,10 +7,41 @@
 'use strict';
 
 import * as vscode from 'vscode';
+import { CompletionItemKind } from 'vscode-languageclient';
 
 const PcdPattern: RegExp = /\b\w+\.(Pcd\w+)[\ ]*\|.+\b/g;
 
 const pcdStore: Map<string, vscode.Location> = new Map();
+
+// interface InfInfo {
+//     infFilePath: string;
+//     componentType: boolean;     // 0 for Library Class, 1 for Driver
+//     componentName: string;      // The name of the component. For eg. BaseLib, GpioRuntimeDxe, etc.
+//     phase: string;              // Determine phase - PEI, SEC, DXE, etc.
+//     sourceFiles: string[];
+// }
+
+// interface PkgInfo {
+//     pkgFolderPath: string;
+//     componentList: InfInfo[];
+// }
+
+// interface LibClassInfo {
+//     libClassName: string;
+//     infFilePath: string;
+// }
+
+// interface ProjectInfo {
+//     dscFilePath: string;
+//     fdfFilePath: string;
+//     libClasses: LibClassInfo[];
+//     componentList: string[];
+// }
+// interface WorkspaceInfo {
+//     workspacePath: string;
+//     PackageList: PkgInfo[];
+//     ProjectList: ProjectInfo[];
+// }
 
 class PcdDefinitionProvider implements vscode.DefinitionProvider {
     public provideDefinition (
@@ -34,6 +65,29 @@ class PcdDefinitionProvider implements vscode.DefinitionProvider {
         return new Promise((reject) => {
             new Error("Definiton not found");
         });
+    }
+}
+
+class PcdCompletionProvider implements vscode.CompletionItemProvider {
+    public provideCompletionItems (
+        document: vscode.TextDocument,
+        position: vscode.Position,
+        token: vscode.CancellationToken
+    ): vscode.ProviderResult<vscode.CompletionItem[]> {
+        const wordRange: vscode.Range|undefined = document.getWordRangeAtPosition(position);
+        const completionResult: vscode.CompletionItem[] = [];
+        if (wordRange) {
+            const searchStr: string = document.getText(wordRange);
+            const regexMatchArr: RegExpMatchArray|null = searchStr.match(/Pcd\w*/g);
+            if (regexMatchArr) {
+                for (const entry of Array.from(pcdStore.keys())) {
+                    if (entry.match(regexMatchArr[0])) {
+                        completionResult.push(new vscode.CompletionItem(entry, CompletionItemKind.Constant));
+                    }
+                }
+            }
+        }
+        return completionResult;
     }
 }
 
@@ -115,6 +169,11 @@ export class UefiContext {
         disposables.push(vscode.languages.registerDefinitionProvider('c', new PcdDefinitionProvider()));
         disposables.push(vscode.languages.registerDefinitionProvider('dsc', new PcdDefinitionProvider()));
         disposables.push(vscode.languages.registerDefinitionProvider('inf', new PcdDefinitionProvider()));
+
+        disposables.push(vscode.languages.registerCompletionItemProvider('c', new PcdCompletionProvider()));
+        disposables.push(vscode.languages.registerCompletionItemProvider('dec', new PcdCompletionProvider()));
+        disposables.push(vscode.languages.registerCompletionItemProvider('dsc', new PcdCompletionProvider()));
+        disposables.push(vscode.languages.registerCompletionItemProvider('inf', new PcdCompletionProvider()));
 
         return disposables;
     }
